@@ -1,0 +1,89 @@
+public function clearAnItemFromCart($id_barang){
+        $data_cart_session = $this->session->userdata('data_cart');
+        if(!is_null($data_cart_session)){
+            if(count($data_cart_session) <= 1){
+                $this->session->unset_userdata('data_cart'); 
+                $this->session->sess_destroy(); 
+            } else {
+                foreach($data_cart_session as $index => $item){
+                    if($item['id_barang'] == $id_barang){
+                        unset($data_cart_session[$index]);
+                        break;
+                    }
+                }
+                $new_data_cart_session = array_values($data_cart_session);
+                $this->session->set_userdata('data_cart', $new_data_cart_session);
+            }
+        }
+        redirect('display_cart'); 
+    }
+
+    public function addOneAmountAnItemInCart($id_barang){
+        $data_cart_session = $this->session->userdata('data_cart');
+        $data_barang = $this->m_barang->getDetailBarangById($id_barang);
+        $cur_jml_item;
+        if(!is_null($data_cart_session)){
+            foreach($data_cart_session as $index => $item){
+                if($item['id_barang'] == $id_barang){
+                    $item['jml_barang']+= 1;
+                    $cur_jml_item = $item['jml_barang'];
+                    $data_cart_session[$index] = $item;
+                    break;
+                }
+            }
+            $this->session->set_userdata('data_cart', $data_cart_session);
+        }
+        if(intval($data_barang->stok_barang) < intval($cur_jml_item)){
+            $valueMessage = 'Stok dari '.$data_barang->nama_barang.' kurang dari '.$cur_jml_item;
+            $this->session->set_flashdata('warning_amount', $valueMessage);
+        }
+        redirect('display_cart'); 
+    }
+
+    public function reduceOneAmountAnItemInCart($id_barang){
+        $data_cart_session = $this->session->userdata('data_cart');
+        $data_barang = $this->m_barang->getDetailBarangById($id_barang);
+        $validate_removed_item = false;
+        $validate_clear_cart = false;
+        $cur_jml_item;
+        if(!is_null($data_cart_session)){
+            foreach($data_cart_session as $index => $item){
+                if($item['id_barang'] == $id_barang){
+                    if(count($data_cart_session) <= 1){
+                        if($item['jml_barang'] - 1 <= 0){
+                            $this->session->unset_userdata('data_cart'); 
+                            $this->session->sess_destroy();
+                            $validate_clear_cart = true;
+                        } else {
+                            $item['jml_barang'] -= 1;
+                            $cur_jml_item = $item['jml_barang'];
+                            $data_cart_session[$index] = $item;
+                        }
+                    } else {
+                        if($item['jml_barang'] - 1 <= 0){
+                            unset($data_cart_session[$index]);
+                            $validate_removed_item = true;
+                        } else {
+                            $item['jml_barang'] -= 1;
+                            $cur_jml_item = $item['jml_barang'];
+                            $data_cart_session[$index] = $item;
+                        }
+                    }
+                    break;
+                }
+            }
+            if($validate_removed_item){
+                $new_data_cart_session = array_values($data_cart_session);
+                $this->session->set_userdata('data_cart', $new_data_cart_session);
+            } else {
+                if(!$validate_clear_cart){
+                    $this->session->set_userdata('data_cart', $data_cart_session);
+                }
+            }
+        }
+        if(intval($data_barang->stok_barang) < intval($cur_jml_item)){
+            $valueMessage = 'Stok dari '.$data_barang->nama_barang.' kurang dari '.$cur_jml_item;
+            $this->session->set_flashdata('warning_amount', $valueMessage);
+        }
+        redirect('display_cart'); 
+    }

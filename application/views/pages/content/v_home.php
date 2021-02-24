@@ -1,0 +1,1 @@
+<h1 style="text-align: center">Ini home. Halo <?php echo $this->session->userdata('username_admin') ?></h1>
